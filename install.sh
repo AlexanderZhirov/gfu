@@ -5,7 +5,7 @@
 # set -x
 
 SCRIPT_NAME="${0}"
-SCRIPT_PATH=$(realpath ${SCRIPT_NAME})
+SCRIPT_PATH=$(dirname $(realpath ${SCRIPT_NAME}))
 
 GFU_PARTED=$(which parted 2>/dev/null)
 GFU_GRUB=$(which grub-install 2>/dev/null)
@@ -83,8 +83,6 @@ main () {
         ! ${GFU_GRUB_EFI_MODE_X32} && ! ${GFU_GRUB_EFI_MODE_X64} && echo "No EFI bootloader was found for installation: ${GFU_GRUB_EFI_X32} or ${GFU_GRUB_EFI_X64}" && exit 1
     fi
 
-    mkdir -v -p ${GFU_MOUNT_PATH} 2>/dev/null
-    
     if [ ! -d ${GFU_MOUNT_PATH} ] ; then
         echo "Path is not a directory: ${GFU_MOUNT_PATH}"
         exit 1
@@ -117,8 +115,12 @@ main () {
         parted ${GFU_DEVICE} -s mklabel gpt
     fi
 
-    parted ${GFU_DEVICE} -s -- mkpart primary 2048s 2099199s
+    parted ${GFU_DEVICE} -s -- mkpart primary fat32 2048s 2099199s
     parted ${GFU_DEVICE} -s set 1 boot on
+
+    if ${GFU_LEGACY_MODE} ; then
+        parted ${GFU_DEVICE} -s set 1 lba on
+    fi
 
     mkfs.fat -F32 ${GFU_DEVICE}1
 
@@ -128,10 +130,10 @@ main () {
     fi
 
     if ${GFU_LEGACY_MODE} ; then
-        ${GFU_GRUB_LEGACY_MODE} && grub-install --no-floppy --boot-directory=${GFU_MOUNT_PATH}/boot --target=i386-pc ${GFU_DEVICE}
+        ${GFU_GRUB_LEGACY_MODE} && grub-install --no-floppy --boot-directory=${GFU_MOUNT_PATH}/boot --target=${GFU_GRUB_LEGACY} ${GFU_DEVICE}
     else
-        ${GFU_GRUB_EFI_MODE_X32} && grub-install --removable --boot-directory=${GFU_MOUNT_PATH}/boot --efi-directory=${GFU_MOUNT_PATH} --target=i386-efi ${GFU_DEVICE}
-        ${GFU_GRUB_EFI_MODE_X64} && grub-install --removable --boot-directory=${GFU_MOUNT_PATH}/boot --efi-directory=${GFU_MOUNT_PATH} --target=x86_64-efi ${GFU_DEVICE}
+        ${GFU_GRUB_EFI_MODE_X32} && grub-install --removable --boot-directory=${GFU_MOUNT_PATH}/boot --efi-directory=${GFU_MOUNT_PATH} --target=${GFU_GRUB_EFI_X32} ${GFU_DEVICE}
+        ${GFU_GRUB_EFI_MODE_X64} && grub-install --removable --boot-directory=${GFU_MOUNT_PATH}/boot --efi-directory=${GFU_MOUNT_PATH} --target=${GFU_GRUB_EFI_X64} ${GFU_DEVICE}
     fi
 
     if [ -d ${SCRIPT_PATH}/grub ] ; then
