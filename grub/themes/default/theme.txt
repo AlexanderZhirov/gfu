@@ -38,7 +38,7 @@ terminal-border: "0"
   width = 30%
   align = "center"
   id = "__timeout__"
-  text = "Автоматическая загрузка через %d секунд"
+  text = "Booting in %d seconds"
   color = "#cccccc"
   font = "Unifont Regular 16"
 }
