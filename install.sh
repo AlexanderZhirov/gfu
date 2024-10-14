@@ -125,7 +125,7 @@ main () {
         touch ${GFU_MOUNT_PATH}/boot/grub/grub.cfg
     fi
 
-    umount -v ${GFU_MOUNT_PATH}1
+    umount -v ${GFU_DEVICE}1
 }
 
 main "${@}"
