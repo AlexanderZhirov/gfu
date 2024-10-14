@@ -2,10 +2,18 @@
 
 [ ${GFU_DEBUG} ] && set -x
 
+# set -x
+
 SCRIPT_NAME="${0}"
 SCRIPT_PATH=$(realpath ${SCRIPT_NAME})
 
-# [ ! "$(id -u)" == 0 ] && echo "Need to run as superuser" && exit 1
+GFU_PARTED=$(which parted 2>/dev/null)
+GFU_GRUB=$(which grub-install 2>/dev/null)
+
+[ -z "${GFU_PARTED}" ] && echo "The parted utility is not installed" && exit 1
+[ -z "${GFU_GRUB}" ] && echo "The grub-install utility is not installed" && exit 1
+
+[ ! "$(id -u)" == 0 ] && echo "Need to run as superuser" && exit 1
 
 main () {
     local GFU_KEY=""
@@ -94,6 +102,13 @@ main () {
             [Nn]* ) exit 0 ;;
             * ) ;;
         esac
+    done
+
+    for partition in $(mount | grep "${GFU_DEVICE}[0-9]" | awk '{print $1}') ; do
+        if ! umount -f ${partition} ; then
+            echo "Failed to unmount ${partition}"
+            exit 1
+        fi
     done
 
     if ${GFU_LEGACY_MODE} ; then
