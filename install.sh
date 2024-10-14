@@ -137,7 +137,7 @@ main () {
     fi
 
     if [ -d ${SCRIPT_PATH}/grub ] ; then
-        cp -rv ${SCRIPT_PATH}/grub ${GFU_MOUNT_PATH}/boot
+        cp -r ${SCRIPT_PATH}/grub ${GFU_MOUNT_PATH}/boot
     else
         touch ${GFU_MOUNT_PATH}/boot/grub/grub.cfg
     fi
