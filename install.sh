@@ -35,10 +35,6 @@ main () {
             -e|--efi)
                 GFU_EFI_MODE=true
                 ;;
-            -p|--path)
-                GFU_MOUNT_PATH="${2}"
-                shift
-                ;;
             *)
                 break
                 ;;
@@ -50,6 +46,7 @@ main () {
     local GFU_GRUB_EFI_X32="i386-efi"
     local GFU_GRUB_EFI_X64="x86_64-efi"
     local GFU_GRUB_LEGACY="i386-pc"
+    local GFU_MOUNT_PATH=`$(mktemp -d)`
 
     GFU_DEVICE=${GFU_DEVICE:-$ENV_GFU_DEVICE}
     [ -z "${GFU_DEVICE}" ] && echo "ENV_GFU_DEVICE: The device was not set" && exit 1
@@ -57,10 +54,6 @@ main () {
 
     ${GFU_LEGACY_MODE} && ${GFU_EFI_MODE} && echo "You only need to set one mode: legacy or efi" && exit 1
     ! ${GFU_LEGACY_MODE} && ! ${GFU_EFI_MODE} && echo "None of the modes are set: legacy or efi" && exit 1
-
-    GFU_MOUNT_PATH=${GFU_MOUNT_PATH:-$ENV_GFU_MOUNT_PATH}
-    [ -z "${GFU_MOUNT_PATH}" ] && echo "ENV_GFU_MOUNT_PATH: The path to the mount directory was not set" && exit 1
-    GFU_MOUNT_PATH=$(realpath ${GFU_MOUNT_PATH} 2>/dev/null)
 
     if ${GFU_LEGACY_MODE} ; then
         local GFU_GRUB_LEGACY_MODE_PATH="${GFU_GRUB_PATH}/${GFU_GRUB_LEGACY}"
@@ -81,16 +74,6 @@ main () {
         [ -d ${GFU_GRUB_EFI_MODE_X64_PATH} ] && GFU_GRUB_EFI_MODE_X64=true
 
         ! ${GFU_GRUB_EFI_MODE_X32} && ! ${GFU_GRUB_EFI_MODE_X64} && echo "No EFI bootloader was found for installation: ${GFU_GRUB_EFI_X32} or ${GFU_GRUB_EFI_X64}" && exit 1
-    fi
-
-    if [ ! -d ${GFU_MOUNT_PATH} ] ; then
-        echo "Path is not a directory: ${GFU_MOUNT_PATH}"
-        exit 1
-    fi
-
-    if [ ! -z "$(ls -A ${GFU_MOUNT_PATH})" ]; then
-        echo "Path is not empty: ${GFU_MOUNT_PATH}"
-        exit 1
     fi
 
     while true; do
@@ -143,6 +126,8 @@ main () {
     fi
 
     umount -v ${GFU_DEVICE}1
+
+    rm -rf ${GFU_MOUNT_PATH}
 }
 
 main "${@}"
